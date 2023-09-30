@@ -23,8 +23,10 @@ The Packages we have used are:
 - BeautifulSoup==4.11.1
 
 ## Web Crawling
-La primera fase para crear un bot scraper es obtener todas las URLs de las que queramos sacar información. Para ello desarrollaremos un bot Crawler que nos las obtenga automaticamente. </br>
-Un bot que realiza web crawling no es nada más que un bot que mapea el árbol de rutas/URLs que tiene una página web, de forma que estas queden guardadas para que el bot scraper pueda ir accediendo a cada una de estas. 
+The initial step to create a scraper bot is to collect all the URLs from which we intend to gather information. To acomplish this, we'll develop a Crawler bot that will automatically retrieve these URLs for us. </br>
+A web crawling , in essence, acts as a digital cartographer, mapping the intrincate network of routes and URLs within a website. It systematically records these paths, therefore enabling the acces of each one by the scraper bot for the data extraction.
+</br>
+</br>
 
 
 ## Getting Started
