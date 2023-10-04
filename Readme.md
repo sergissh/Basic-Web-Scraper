@@ -305,5 +305,5 @@ python main.py
 
 
 ## Links 🔗
-- <a href="https://hilarious-begonia-e14f53.netlify.app/">My Web Personal Portfolio</a>
+- <a href="https://eloquent-rugelach-c4e65d.netlify.app/">My Web Personal Portfolio</a>
 - <a href="https://www.youtube.com/watch?v=LVZoU1unKLk&ab_channel=SergiS%C3%A1nchezHern%C3%A1ndez">How the scraper bot works video</a>
