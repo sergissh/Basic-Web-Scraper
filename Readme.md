@@ -12,7 +12,8 @@ To build this bot Web Scraper, it's essential to delineate its core components:
 
 This project exemplifies the seamless integration of these components to facilitate data retrieval and analysis.
 
-[![Watch the video](https://i.stack.imgur.com/Vp2cE.png)](https://www.youtube.com/watch?v=LVZoU1unKLk&ab_channel=SergiS%C3%A1nchezHern%C3%A1ndez)
+[![Watch the video](https://img.youtube.com/vi/LVZoU1unKLk/maxresdefault.jpg
+)](https://www.youtube.com/watch?v=LVZoU1unKLk&ab_channel=SergiS%C3%A1nchezHern%C3%A1ndez)
 
 
 ## Dependencies
