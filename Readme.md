@@ -12,8 +12,8 @@ To build this bot Web Scraper, it's essential to delineate its core components:
 
 This project exemplifies the seamless integration of these components to facilitate data retrieval and analysis.
 
+[![Watch the video](https://i.stack.imgur.com/Vp2cE.png)](https://www.youtube.com/watch?v=LVZoU1unKLk&ab_channel=SergiS%C3%A1nchezHern%C3%A1ndez)
 
-Data: 3552 seconds for 235 URLs that leaves us with a mean of 15,1 seconds for page visited and data extracted
 
 ## Dependencies
 The Packages we have used are:
@@ -29,7 +29,7 @@ A web crawling , in essence, acts as a digital cartographer, mapping the intrinc
 </br>
 ### DFS - Search Algorithm
 
-Para poder recorrer todo el árbol de rutas de la web utilizaremos el algoritmo de búsqueda DFS (Depth First Search), el cual recorre el árbol de rutas de forma completa explotando cada camino hasta su nodo hoja.
+To navigate the entire route tree of the website, we will employ the DFS (Depth First Search) algorithm. This algorithm systematically explores the entire route tree, thoroughly traversing each path to its leaf node, ensuring comprehensive coverage.
 
 ```python
     #Pseudo-code of the DFS algorithm
@@ -58,14 +58,13 @@ Para poder recorrer todo el árbol de rutas de la web utilizaremos el algoritmo 
                     crawl(next_url, visited)
                         
 ```
-En este pseudo-código tenemos la estructura base del algoritmo DFS para nuestro bot crawler, el qual es una <a href="https://www.campusmvp.es/recursos/post/Que-es-la-recursividad-o-recursion-Un-ejemplo-con-JavaScript.aspx"><b>Función Recursiva</b></a> que permite obtener todos los links de la web y explorar las ramas de forma profunda. Para obtener el contenido HTML de la URL primero tenemos que realizar una petición GET HTTP con la libreria Requests, y posteriormente inicializar un objeto de BeautyfulSoup para poder acceder a su contenido de forma sencilla.
-
+In this pseudo-code, we represent the fundamental structure of the DFS algorithm for our crawler bot. This recursive function serves as a means to gather all web links and delve deep into the branches. To acquire the HTML content of a URL, we beign by issuing a GET HTTP request using the Requests library, and then initialize a BeautyfulSoup object with its result to access to the content for further processing.
 ### Pattern Matching
-Para poder crear un web scraper es muy importante analizar los patrones dentro de la página web a explotar, siendo este factor también importante para el bot crawler. En nuestro caso no queremos todas las rutas de la web sinó solo aquellas que contengan datos de libros, por lo que si solo nos quedamos con esas URLs nos ahorarremos visitar las que no sean de interés. 
+In order to create a web scraper, it's crucial to analyze the web's patterns for exploitation. This analysis is equally significant for our crawler bot. In our specific case, our objective is not to traverse every corner of the web but rather to focus exclusively on routes containing book-related data. By filtering and retaining only these URLs, we can efficiently skip those that do not align with our interests, saving resources and time.
 <div align="center">
-    <img width="80%" src="./images/URL-pattern.png" />
+    <img width="80%" src="./images/URL-pattern.png" alt="URL pattern"/>
 </div>
-En nuestro caso hemos detectado que las URLs que contienen datos de libros siempre contienen una especie de identificador de 13 números, por lo que podemos utilizar un pattern matching sobre las URLs a guardar.
+In our scenario, we've identified that URLs containing book-related data consistently incorporate a 13-digit identifier. Therefore, we can employ pattern matching on the URLs to selectively retain them.
 
 ```python
     #This patter matching requires to have 13 numbers inside the string/URL
@@ -81,17 +80,207 @@ En nuestro caso hemos detectado que las URLs que contienen datos de libros siemp
 
 ### Bot Crawler Considerations
 
-Por tal de agilizar este programa y no obtener miles y miles de URLs a scrapear (ya que como veremos más adelante no es un proceso rápido) hemos limitado el número máximo de URLs a recoger. Esto lo hemos hecho de la siguiente manera:
+#### Limit URLs and Depth
+In order to speed up this program and prevent the accumulation of an excessive number of URLs for scraping (as this process can be time-consuming) two limitations can be applied:
 
-- Limitando a 200 el número de URLs a guardar.
-- Limitando la profundidad a la que explorar el árbol de URLs, en nuestro caso a 2. 
+- Set a cap on the maximum number of URLs to be collected.
+- Restricted the depth at which the URL tree can be explored. We have tried with depth 2 and 3 (being 0 the seed node).
 
-Se puede jugar con estos dos parámetros pero hay que tener en cuenta que cuando más profundicemos en el árbol, y cuantas más URLs guardemos más tardará la ejecución del bot crawler.
+These parameters can be adjusted based on your preferences, but it's essential to bear in mind that delving deeper into the tree and collecting more URLs will result in longer execution time for the crawler bot. In the results section you'll get an idea of the time cost adjusting the depth.
+
+#### Relative URLs
+We must also keep in mind that within most web pages, the URLs found within the tags are often relative URLs. </br>
+To handle this, it is important to add the base URL of the web page to each value of the tags along with the URLs that form the path.
+
+```python
+    base_url = "https://www.casadellibro.com"
+    anchor_url = "/books"
+    new_base_url = base_url + anchor_url 
+    new_base_url
+    "https://www.casadellibro.com/books"
+```
+There will be also absolute URLs or URLs that are relative to the index page, not the current. As we have said, it is important to analyse carefully the web to exploit, since in this case the books related URLs will be relative to the index page, and they have some features in common. 
+#### Final Code
+```python
+    #Constants
+    books_matching = r'\d{13}'
+    base_url = "https://www.casadellibro.com"
+    
+    def crawl(url, visited, depth_limit, save_urls):
+        #Cap the maximum number of urls to save
+        if depth_limit == 0 or len(save_urls) >=1000: 
+            return
+            
+        #Add current URL to the visited list
+        visited.append(url)
+
+        try:
+            #HTTP Request of the URL to retrieve the HTML content
+            response = requests.get(url + '/')
+            if response.status_code == 200:
+
+                #Parse HTML
+                soup = BeautifulSoup(response.text, 'html.parser')
+
+                #Find all the links in the HTML
+                links = soup.find_all('a', href=True)
+
+                #Iterate each link
+                for link in links:
+
+                    #Extract href attribute of a tag
+                    next_url = link['href']
+
+                    #Check that the URL is valid or it is not already visited
+                    if len(next_url) > 0 and len(next_url) < 120 and next_url not in visited:
+
+                        #Chech if its a relative URL (/libro-title-example...)
+                        if next_url.startswith('/'):
+
+                            #Check if the URL is our target by:
+                            # pattern matching
+                            # checking that is not already saved
+                            # checking the word 'libro' in the URL (all have in common)
+                            if re.search(books_matching, next_url) and base_url + next_url not in save_urls and 'libro' in next_url:
+                                
+                                #Saving the index path concatenated with the relative path
+                                save_urls.append(base_url + next_url)
+                            else:
+                                #Recursive Relative URL
+                                crawl(base_url + next_url, visited, depth_limit - 1, save_urls)
+                        
+                        #Recursive Absolute URL
+                        else:
+                            crawl(next_url, visited, depth_limit - 1, save_urls)
+                            
+        except Exception as e:
+            print(f"Error crawling {next_url}: {str(e)}")
+```
+
+## HTML Parsing
+As you have seen in the crawler bot, we have used the BeautyfulSoup to fetch and parse the HTML content, enabling us to locate <b>`<a>`</b> tags and extract their <b>`href`</b> attribute. However, when dealing with the scraper bot, we encounter a different scenario. In the case of the 'La Casa del Libro' website, book information isn't readily available in the original HTML source; instead, it's dinamically generated using JavaScript files.</br>
+To overcome this challenge, we'll employ the <b>Selenium</b> library, which enables us to launch a browser instance, navigate to the URLs, and collect data once the page has fully loaded.
+```python
+    def scrap(urls):
+        for url in urls:
+            options = webdriver.ChromeOptions()
+            #Exclude errors in the terminal
+            options.add_experimental_option('excludeSwitches', ['enable-logging'])
+            browser = webdriver.Chrome(
+                options = options 
+            )
+            #Open a Chrome instance with the url 
+            browser.get(url)
+            try:
+                #Extract data
+                #
+                #
+                #Close Chrome Instance
+                browser.quit()
+            except selenium.common.exceptions.NoSuchElementException:
+                browser.quit()
+                continue
+
+        return dataframe
+```
+Using this code, each URL will trigger the opening of a Chrome instance, facilitating data extraction. </br> When executing this code on any of the URLs, you can expect the following:
+<div align="center">
+    <img width="80%" src="./images/Cookies.png" alt="Accept Cookies Window"/>
+</div>
+Upon opening the page, a cookie consent popup will appear, impeding data extraction until it's acknowledged with a click. To handle this, Selenium provides a handy function that automates the clicking of the popup, given the element to be clicked. 
+
+```python
+    myElem = WebDriverWait(browser, 20).until(EC.element_to_be_clickable((By.CSS_SELECTOR, 'button#onetrust-accept-btn-handler')))
+
+```
+
+## Data Extraction
+The final step involves data extraction, which necessitates identifying specific patterns withing the HTML structure where the data resides.
+</br>
+Patterns Uncovered:
+
+- Price: The element containing prices can either be a `<span>` or `<strong>` element, both of which share the class attribute `'text-h4 font-weight-bold'`.
+- Title: This corresponds to the `<h1>` element, which is unique for each page.
+- Author: The element housing the author information is identified by the class `'text--darken-1'`.
+
+The process to extract data from each website is different, in this case we have used both the h1 element and the element classes, since the website uses bootstrap to provide styles through classes. You have to be very careful about the classes, since it could be that these were in other elements and would not return the data that we want. 
+The process of data extraction can vary from one website to another. In our case, we've leveraged both the `<h1>` element and class attributes, as the website utilizes Bootstrap for styling through these classes. Careful attention to these classes is imperative, as theu could be assigned to other elements and potentially lead to unintended data retrieval. For that reason, it is very important to find unique ways to identify the elements where the data resides.
+</br>
+</br> 
+Below is the final code of the Scraper Bot:
+```python
+#Scraper bot code
+def scrap(urls, dataframe):
+    for url in urls:
+        options = webdriver.ChromeOptions()
+        options.add_experimental_option('excludeSwitches', ['enable-logging'])
+        browser = webdriver.Chrome(
+            options = options 
+        )
+        browser.get(url)
+        try:
+            myElem = WebDriverWait(browser, 20).until(EC.element_to_be_clickable((By.CSS_SELECTOR, 'button#onetrust-accept-btn-handler')))
+            try:
+                price = browser.find_element(By.CSS_SELECTOR, ".text-h4.font-weight-bold").text
+                author = browser.find_element(By.CLASS_NAME, "text--darken-1").text
+                title = browser.find_element(By.CSS_SELECTOR, "h1").text
+                print({"Title": title, "Author": author, "Price": price})
+                dataframe.loc[len(dataframe)] = [title, author, price]                
+                browser.quit()
+            except selenium.common.exceptions.NoSuchElementException:
+                browser.quit()
+                continue
+        except selenium.common.exceptions.NoSuchWindowException:
+            browser.quit()
+            continue
+
+    return dataframe
+```
+Effective error management is crucial in this contents. In  the event that the script encounters an error, we aim for it to gracefully handle the situation without halting its execution. Even if the desired data is not found on a particular URL, the bout should move on the next URL to scrape.
+</br>
+In this case we have managed the situations where the cookies acceptance popup doesn't appear (alhough it should appear always), and when the scrape doesn't found the desired data with the corresponding selectors.
+
+## Final Considerations
+
+### Bot Crawler Problems
+A significant portion of this project development time was dedicated to the crawler bot. This was primarily due to the following challenges:
+
+- Absolute and Relative Routes: Within the website, routes can vary in complexity, with some delving deeper into the route tree while others ascend.  Managing both absolute and relative routes posed a complex navigation challenge.
+- Route Loops: The same route can appear on multiple pages or URLs, potentially leading to indefinitve loops. Although this issue can be resolved by tracking visited routes, it becomes mores intrincate when combined with the absolute/relative routes dilemma, adding to the computational cost.
+
+### Scraping Limitations
+Corporate wensites, in particular, employ measures to deter data scraping due to concerns over data privacy and security. These limitations include:
+
+#### CORS Problem
+A common hurdle encountered is the Cross-Origin Resource Sharing (CORS) issue. Websites implement this security measure to restrict browser-originated requests to the same domain that served the web page. Consequently, when attempting to retrieve a website's HTML content, CORS errors may prevent access to the source code. One practical solution involves setting up a proxy server to act as an intermediary between our scraper and the target website.
+
+#### IP Blocking
+IP Blocking presents another common challenge. Websites may temporarily block our IP address if they perceive our scraping activity as excessive or prejudicial. Although these blocks are tipycally temporary, they can disrupt data collection. Similar to the CORS issue, IP blocking can be mitigated through the use of proxy servers or VPNs, which provide alternative IP addresses for scraping tasks.
+
+## Results 
+Una vez tenemos el crawler bot que nos devuelve las URLs, y el scraper bot para extraer la información, ya tenemos un web scraper funcional. 
+### Crawler Bot
+El tiempo de ejecución del bot crawler varia dependiendo de la profundidad del árbol de rutas que queremos visitar. Hemos realizado tres ejecuciones con diferentes valores de profundidad:
+
+|Tree Depth|Execution Time|URLs retrieved|
+|----------|:------------:|:------------:|
+|1         |0.326s        |84            |
+|<b>2</b>         |<b>675s(11min)</b>  |<b>4910</b>          |
+|3         |12hours(stopped exec.)     |8000  |
+
+You can see that there is a big difference in the time cost chosing the tree depth to explore. Despite the fact that for the last case we have decided to end its execution, it takes much longer to execute than the previous depth, and the URLs obtained do not increase as much as the time needed. 
+
+### Scraber Bot
+We have not scraped the 4910 URLs that we obtained from the crawler, because the time need it to scrap one page is longer than to fetch it. After all, we are launching a browser instance and loading a web page. </br>
+To scrap data from <b>200 URLs</b>, the time consumed by the bot was <b>3020 seconds(50 minutes)</b>, giving us that for each URL needs 15 seconds to extract its information. 
 
 
+## Next Steps ⏩
+To enhance the effectiveness and reduce time execution of this web scraping script, consider implementing the following improvements:
 
-
-
+- [ ] Improve the Crawler bot search algorithm, using heuristics that allow pruning unnecesary search paths.
+- [ ] Build a proxy server to avoid possible connectivity problems.
+- [ ] Use a different strategy in the scraper bot than having to open an instance of a browser.
 ## Getting Started
 ### Installation
 To ensure the successful installation of this project and its dependencies, it is essential to have both <b>Git</b> and <b>pip</b> already installed.
@@ -112,3 +301,8 @@ Execute the scraper:
 ```bash
 python main.py
 ```
+
+
+## Links 🔗
+- <a href="https://hilarious-begonia-e14f53.netlify.app/">My Web Personal Portfolio</a>
+- <a href="https://www.youtube.com/watch?v=LVZoU1unKLk&ab_channel=SergiS%C3%A1nchezHern%C3%A1ndez">How the scraper bot works video</a>

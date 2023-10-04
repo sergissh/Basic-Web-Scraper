@@ -4,11 +4,10 @@ import re
 from pathlib import Path
 
 books_matching = r'\d{13}'
-
-def crawl(base_url, url, visited, depth_limit, final_urls):
-    if depth_limit == 0 or len(final_urls) >=200: 
+base_url = "https://www.casadellibro.com"
+def crawl(url, visited, depth_limit, save_urls):
+    if depth_limit == 0 or len(save_urls) >=200: 
         return
-    
     visited.append(url)
 
     try:
@@ -18,16 +17,16 @@ def crawl(base_url, url, visited, depth_limit, final_urls):
 
             links = soup.find_all('a', href=True)
             for link in links:
+                
                 next_url = link['href']
-                if len(next_url) < 120 and next_url.startswith('/') and len(next_url) > 0:
-                    next_url = base_url + next_url
-                    if next_url not in visited:
-                        if re.search(books_matching, next_url) and next_url not in final_urls:
-                            final_urls.append(next_url)
-                            print("Added")
+                if len(next_url) > 0 and len(next_url) < 120 and next_url not in visited:
+                    if next_url.startswith('/'):
+                        if re.search(books_matching, next_url) and base_url + next_url not in save_urls and 'libro' in next_url:
+                            save_urls.append(base_url + next_url)
                         else:
-                            crawl(base_url, next_url, visited, depth_limit - 1, final_urls)
-
+                            crawl(base_url + next_url, visited, depth_limit - 1, save_urls)
+                    else:
+                        crawl(next_url, visited, depth_limit - 1, save_urls)
                         
     except Exception as e:
-        print(f"Error crawling {url}: {str(e)}")
+        print(f"Error crawling {next_url}: {str(e)}")
